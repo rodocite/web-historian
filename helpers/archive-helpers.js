@@ -16,8 +16,8 @@ exports.paths = {
 };
 
 // Used for stubbing paths for tests, do not modify
-exports.initialize = function(pathsObj){
-  _.each(pathsObj, function(path, type) {
+exports.initialize = function (pathsObj) {
+  _.each(pathsObj, function (path, type) {
     exports.paths[type] = path;
   });
 };
@@ -25,17 +25,39 @@ exports.initialize = function(pathsObj){
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(){
+exports.readListOfUrls = function (callback) {
+  // read the file (sites.txt)
+  fs.readFile(exports.paths.list, function (err, sites) {
+    sitesArr = sites.toString().split('\n');
+
+    callback(sitesArr);
+  });
 };
 
-exports.isUrlInList = function(){
+// archive.isUrlInList('www.google.com', function () {});
+exports.isUrlInList = function (callback) {
+  // read through the list
+  exports.readListOfUrls(function (sitesArr) {
+    // iterate through sites, see if any site === url
+    // _.each
+    callback(webSiteFoundOrNot);
+  });
 };
 
-exports.addUrlToList = function(){
+exports.addUrlToList = function (callback) {
+  fs.appendFile(TODO, function (exisits) {
+    callback();
+  });
 };
 
-exports.isUrlArchived = function(){
+// archive.isUrlArchived('www.google.com', function () {});
+exports.isUrlArchived = function (callback) {
+  fs.exisits(TODO, function (exisits) {
+    callback();
+  });
 };
 
-exports.downloadUrls = function(){
+exports.downloadUrls = function () {
+  // checkout the request module
+  // use the .pipe function
 };
