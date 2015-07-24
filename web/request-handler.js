@@ -1,33 +1,52 @@
+var fs = require('fs');
 var path = require('path');
 var archive = require('../helpers/archive-helpers');
-// require more modules/folders here!
+var url = require('url');
+var utils = require('./http-helpers');
+var queryString = require('querystring');
 
 exports.handleRequest = function (req, res) {
-  res.end(archive.paths.list);
+  console.log("Serving request type " + req.method + " for url " + req.url);
+
+  router[req.method](req, res);
 };
 
-var actions = {
-  'GET': getSite,
-  'POST': saveSite,
-}; // actions
+var router = {
+  'GET': function (req, res) {
+    var urlParts = url.parse(req.url);
+    var urlPath = urlParts.pathname === '/' ? '/index.html' : urlParts.pathname;
+    utils.serveAssets(res, urlPath);
+  }, // GET
+  'POST': function (req, res) {
+    console.log('POSTING!!!!');
+    saveSite(req, res);
+  }, // POST
+};
 
-var getSite = function () {
-  // if url is in list
-  if (archive.isUrlInList(TODO)) {
-    // redirect accordingly
-    // else redirect accordingly
-  }
-}; // getSite
 
-var saveSite = function () {
-  // if url is in the list
-  if (archive.isUrlInList(TODO)) {
-    // if site is archived
-    if (archive.isUrlArchived(TODO)) {
-      // redirect client to the site
-    }
-    // else
-      // append to site list
-  }
-
-}; // saveSite
+var saveSite = function(request, response){
+  utils.collectData(request, function(data) {
+    var url = queryString.parse(data).url;
+    // check sites.txt for web site
+    archive.isUrlInList(url, function(found){
+      if (found) { // found site
+        // check if site is on disk
+        archive.isUrlArchived(url, function(exists) {
+          if (exists) {
+            // redirect to site page (/www.google.com)
+            utils.sendRedirect(response, '/' + url);
+          } else {
+            // Redirect to loading.html
+            utils.sendRedirect(response, '/loading.html');
+          }
+        });
+      } else { // not found
+        // add to sites.txt
+        archive.addUrlToList(url, function(){
+          // Redirect to loading.html
+          utils.sendRedirect(response, '/loading.html');
+        });
+      }
+    });
+  });
+};

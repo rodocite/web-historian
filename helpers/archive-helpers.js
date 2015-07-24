@@ -1,13 +1,9 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var request = require('request');
+var url = require('url');
 
-/*
- * You will need to reuse the same paths many times over in the course of this sprint.
- * Consider using the `paths` object below to store frequently used file paths. This way,
- * if you move any files, you'll only need to change your code in one place! Feel free to
- * customize it in any way you wish.
- */
 
 exports.paths = {
   siteAssets: path.join(__dirname, '../web/public'),
@@ -15,49 +11,62 @@ exports.paths = {
   list: path.join(__dirname, '../archives/sites.txt')
 };
 
-// Used for stubbing paths for tests, do not modify
 exports.initialize = function (pathsObj) {
   _.each(pathsObj, function (path, type) {
     exports.paths[type] = path;
   });
 };
 
-// The following function names are provided to you to suggest how you might
-// modularize your code. Keep it clean!
-
 exports.readListOfUrls = function (callback) {
-  // read the file (sites.txt)
-  fs.readFile(exports.paths.list, function (err, sites) {
-    sitesArr = sites.toString().split('\n');
+  fs.readFile(exports.paths.list, 'utf8', function (err, sites) {
+
+    sitesArr = _.filter(sites.split('\n'), function(site) {
+      if(site !== '') {
+        return site;
+      }
+    });
 
     callback(sitesArr);
   });
 };
 
 // archive.isUrlInList('www.google.com', function () {});
-exports.isUrlInList = function (callback) {
+exports.isUrlInList = function (url, callback) {
   // read through the list
   exports.readListOfUrls(function (sitesArr) {
-    // iterate through sites, see if any site === url
-    // _.each
-    callback(webSiteFoundOrNot);
+    callback(_.contains(sitesArr, url));
   });
 };
 
-exports.addUrlToList = function (callback) {
-  fs.appendFile(TODO, function (exisits) {
-    callback();
+exports.addUrlToList = function (url, callback) {
+  fs.appendFile(exports.paths.list, url + '\n', function(err) {
+    if (err) {
+      console.log(err);
+    }
+    if (callback) {
+      callback();
+    }
   });
 };
 
-// archive.isUrlArchived('www.google.com', function () {});
-exports.isUrlArchived = function (callback) {
-  fs.exisits(TODO, function (exisits) {
-    callback();
+// archive.isUrlArchived('www.example.com', function () {});
+exports.isUrlArchived = function (url, callback) {
+  // check out erik's note on slack!
+  fs.exists(path.join(exports.paths.archivedSites, url), function (exists) {
+    if (!exists) {
+      callback(false);
+      return;
+    }
+    callback(true);
   });
 };
 
-exports.downloadUrls = function () {
-  // checkout the request module
-  // use the .pipe function
+exports.downloadUrls = function (sitesArr) {
+  sitesArr.forEach(function(site) {
+    request('http://' + site, function (err, response, body) {
+      if (err) {
+        throw err;
+      }
+    }).pipe(fs.createWriteStream(path.join(exports.paths.archivedSites, site)));
+  });
 };
